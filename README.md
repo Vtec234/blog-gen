@@ -1,0 +1,1 @@
+Static site generator used for my blog at [voidma.in](https://voidma.in/).

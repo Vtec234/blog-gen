@@ -1,0 +1,8 @@
+.stack-work/
+dist-newstyle/
+*.cabal
+*.lock
+_site/
+_cache/
+node_modules/
+photos/

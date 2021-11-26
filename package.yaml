@@ -1,0 +1,53 @@
+name:                blog-gen
+version:             0.2.0.0
+github:              "Vtec234/blog-gen"
+license:             MIT
+author:              "Wojciech Nawrocki"
+maintainer:          "wjnawrocki@protonmail.com"
+copyright:           "2018-2021 Wojciech Nawrocki"
+
+extra-source-files:
+- README.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/Vtec234/blog-gen#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- filepath
+- directory
+- text
+- process
+- containers
+- time == 1.9.3
+- transformers == 0.5.6.2
+- bytestring == 0.10.12.0
+- unordered-containers == 0.2.15.0
+- utf8-string == 1.0.2
+- aeson == 1.5.6.0
+- pandoc == 2.14.0.3
+- pandoc-types == 1.22.1
+- blaze-html == 0.9.1.2
+- hakyll == 4.15.1.0
+- hakyll-images == 1.1.1
+- ipynb == 0.1.0.2
+
+library:
+  source-dirs: src
+
+executables:
+  site:
+    main:                site.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - blog-gen
