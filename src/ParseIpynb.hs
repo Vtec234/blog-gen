@@ -6,9 +6,13 @@ module ParseIpynb where
 
 import           Data.Maybe (fromMaybe, listToMaybe)
 
+import           Data.String (IsString)
+
 import qualified Data.ByteString.Lazy as B
 
 import qualified Data.Aeson as Json
+import qualified Data.Aeson.KeyMap as JsonMap
+import qualified Data.Aeson.Key as JsonKey
 
 import qualified Data.Ipynb as Ipy
 
@@ -37,9 +41,9 @@ viewMime = "application/vnd.jupyter.widget-view+json"
 --   otherwise "".
 ipynbTitle :: B.ByteString -> Compiler String
 ipynbTitle bs = do
-  Ipy.Notebook {..} :: Ipy.Notebook Ipy.NbV4 <-
+  Ipy.Notebook { notebookMetadata = Ipy.JSONMeta meta } :: Ipy.Notebook Ipy.NbV4 <-
     either fail pure $ Json.eitherDecode bs
-  case Map.lookup "title" notebookMetadata of
+  case Map.lookup "title" meta of
     Just (Json.String title) -> pure $ Txt.unpack title
     _                        -> pure ""
 
@@ -47,21 +51,21 @@ ipynbTitle bs = do
 --   Also returns a context including the parsed notebook metadata.
 ipynbToHtml :: B.ByteString -> Compiler Html.Html
 ipynbToHtml bs = do
-  Ipy.Notebook {..} :: Ipy.Notebook Ipy.NbV4 <-
+  Ipy.Notebook { notebookMetadata = Ipy.JSONMeta meta, .. } :: Ipy.Notebook Ipy.NbV4 <-
     either fail pure $ Json.eitherDecode bs
 
   -- Retrieve the kernel language.
-  spec <- case Map.lookup "kernelspec" notebookMetadata of
+  spec <- case Map.lookup "kernelspec" meta of
     Just (Json.Object spec) -> pure spec
     _ -> fail "No kernelspec in .ipynb."
-  nbLang <- case HMap.lookup "language" spec of
+  nbLang <- case JsonMap.lookup "language" spec of
     Just (Json.String lang) -> pure $ Txt.unpack lang
     _ -> fail "No kernel language specified in .ipynb kernelspec."
 
   -- Format the embedded widget state if there is any.
   let widgetStateHtml = do -- Maybe monad
-        Json.Object wdgts <- Map.lookup "widgets" notebookMetadata
-        state <- HMap.lookup stateMime wdgts
+        Json.Object wdgts <- Map.lookup "widgets" meta
+        state <- JsonMap.lookup (JsonKey.fromText stateMime) wdgts
         return $ Html.script Html.! HAtr.type_ (Html.toValue stateMime) $
                  Html.unsafeLazyByteString $ Json.encode state
 
@@ -106,5 +110,9 @@ codeOutputToHtml Ipy.DisplayData { .. } =
           Html.unsafeLazyByteString $ Json.encode j
     _ -> fail "Don't know how to transform non-widget ipynb DisplayData."
   where meta = Ipy.unMimeBundle displayData
+
+codeOutputToHtml Ipy.ExecuteResult { .. } = pure $ Html.pre "execution result."
+
+codeOutputToHtml Ipy.Err { .. } = pure $ Html.pre "error."
 
 codeOutputToHtml _ = fail "Unhandled code output type in .ipynb."

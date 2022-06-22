@@ -17,7 +17,7 @@
 #
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
-resolver: lts-18.18
+resolver: lts-19.12
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -41,8 +41,7 @@ packages:
 #
 # extra-deps: []
 extra-deps:
-    - hakyll-4.15.1.0
-    - hakyll-images-1.1.1
+    - hakyll-images-1.2.0
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
@@ -51,7 +50,7 @@ extra-deps:
 # extra-package-dbs: []
 
 # Control whether we use the GHC we find on the path
-# system-ghc: true
+system-ghc: true
 #
 # Require a specific version of stack, using version ranges
 # require-stack-version: -any # Default

@@ -74,6 +74,11 @@ highlightCodeInline (PDoc.Code (_, classes, keyvals) contents) =
         composed = pygmentizeToHtml lang strContents
 highlightCodeInline x = x
 
+addLinkClasses :: PDoc.Inline -> PDoc.Inline
+addLinkClasses (PDoc.Link (ident, classes, keyvals) inlines target) =
+  PDoc.Link (ident, "hover-bg-flippy" : classes, keyvals) inlines target
+addLinkClasses x = x
+
 pdocReaderOptions :: PDoc.ReaderOptions
 pdocReaderOptions = PDoc.def
   { PDoc.readerExtensions = PDoc.pandocExtensions <> PDoc.extensionsFromList exts }
@@ -88,7 +93,7 @@ pdocWriterOptions = PDoc.def
 
 -- | Nicely highlights code blocks in a Pandoc, embedding them as raw HTML in the output.
 pdocTransformToHtml :: PDoc.Pandoc -> PDoc.Pandoc
-pdocTransformToHtml = PDoc.walk highlightCodeBlock . PDoc.walk highlightCodeInline
+pdocTransformToHtml = PDoc.walk highlightCodeBlock . PDoc.walk highlightCodeInline . PDoc.walk addLinkClasses
 
 -- | Parses the given text as Markdown, highlighting code blocks.
 pdocParseMarkdown :: Txt.Text -> Either PDoc.PandocError PDoc.Pandoc
