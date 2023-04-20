@@ -1,0 +1,10 @@
+cradle:
+  cabal:
+    - path: "./src"
+      component: "lib:blog-gen"
+    - path: "./app"
+      component: "exe:site"
+
+dependencies:
+  - default.nix
+  - shell.nix

@@ -18,7 +18,7 @@ import           Hakyll hiding (pandocCompiler)
 import           Hakyll.Images hiding (lookup)
 import           Hakyll.Core.Compiler.Internal (compilerTellDependencies)
 
-import           ParseIpynb
+import           ParseIpynb (ipynbTitle, ipynbToHtml)
 import           Utils
 
 import qualified Data.ByteString.Lazy.UTF8 as BLU
@@ -30,7 +30,7 @@ markdownCtx :: Context String
 markdownCtx = functionField "md"
   (\args _ -> case args of
     arg : _ -> either (fail . show) (pure . Html.renderHtml) $
-                 pdocMarkdownToHtml $ Txt.pack arg
+        pdocMarkdownToHtml $ Txt.pack arg
     _       -> fail "No argument given to $md(needsArg)$.") <>
   defaultContext
 
@@ -146,12 +146,17 @@ main = hakyll $ do
   match (fromRegex "^(\\./)?js/[^.]+.js$") $ do
     route idRoute
     compile $ do
+      -- In their metadata, JS files can point at another file to be included verbatim.
       maybeInclude <- getUnderlying >>= \id -> getMetadataField id "include"
-      include :: String <- case maybeInclude of
-                             Just scriptName -> loadBody $ fromFilePath scriptName
-                             Nothing         -> pure ""
+      includeContents :: String <-
+        case maybeInclude of
+          Just scriptName -> loadBody $ fromFilePath scriptName
+          Nothing         -> pure ""
       getResourceBody
-        >>= withItemBody (unixFilter "closure" [] . (include ++))
+        >>= withItemBody (pure . (includeContents ++))
+      -- FIXME: replace google closure with something more JSy that works on arm64
+      --getResourceBody
+      --  >>= withItemBody (unixFilter "npx" ["--", "google-closure-compiler"] . (include ++))
 
   -- Complete (non-underscored) .scss files depend on partial (underscored)
   -- .css and .scss files. We "compile" those by doing nothing.
@@ -166,7 +171,9 @@ main = hakyll $ do
       compile $ do
         p <- getResourceFilePath
         let opts =
-              [ p
+              [ "--"
+              , "postcss-cli"
+              , p
               , "--parser"
               , "postcss-scss"
               , "-u"
@@ -178,8 +185,7 @@ main = hakyll $ do
               , "autoprefixer" -- Autogenerate prefixes for browser support
               , "cssnano" -- Minify
               ]
-
-        unixFilter "postcss" opts "" >>= makeItem
+        unixFilter "npx" opts "" >>= makeItem
 
   -- Compile templates.
   match "templates/*" $ compile templateBodyCompiler
@@ -204,7 +210,7 @@ main = hakyll $ do
       . toFilePath
     compile $ do
       galleryName <- Path.takeBaseName <$> getResourceFilePath
-      let pat = (fromGlob $ "photos" Path.</> galleryName Path.</> "*.jpg")
+      let pat = fromGlob ("photos" Path.</> galleryName Path.</> "*.jpg")
                 .&&. hasVersion "copy"
       -- Add a list `images` with a `path` field on each to the context.
       let galleryCtx = listField "images"
@@ -226,6 +232,7 @@ main = hakyll $ do
       >>= loadAndApplyTemplate "templates/default.html" postCtx
       >>= relativizeUrls
 
+  -- TODO just match by ipynb in posts/, no jupyter_notebooks dir
   match "posts/jupyter_notebooks/*.ipynb" $ do
     version "raw" $ do
       route idRoute
@@ -261,9 +268,6 @@ main = hakyll $ do
                        >>= relativizeUrls
   match "pages/index.html" $ do
     route $ constRoute "index.html"
-    compile pageCompiler
-  match "pages/about.html" $ do
-    route $ constRoute "about/index.html"
     compile pageCompiler
   match "pages/photos.html" $ do
     route $ constRoute "photos/index.html"
