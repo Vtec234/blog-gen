@@ -1,4 +1,6 @@
 .direnv/
+result/
+dist-newstyle/
 _site/
 _cache/
 node_modules/

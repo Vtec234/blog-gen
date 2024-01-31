@@ -27,7 +27,7 @@ dependencies:
 - containers
 - time == 1.12.2
 - transformers == 0.6.1.1
-- bytestring == 0.12.0.2
+- bytestring == 0.11.5.3
 - unordered-containers == 0.2.20
 - utf8-string == 1.0.2
 - aeson == 2.2.1.0
